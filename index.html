@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HashVault — CryptoJS Hash Generator & Steganography</title>
+
+    <!-- CryptoJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #060b16;
+            --card: #0f1629;
+            --card2: #141d33;
+            --input: #0a1020;
+            --border: #1a2744;
+            --blue: #4c8bf5;
+            --purple: #a855f7;
+            --green: #22c55e;
+            --cyan: #06d6d0;
+            --red: #f43f5e;
+            --orange: #f59e0b;
+            --text: #e6ecf5;
+            --muted: #5e7191;
+            --dim: #3a4d6e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== BACKGROUND GRID ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(76, 139, 245, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(76, 139, 245, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            padding: 45px 20px 10px;
+        }
+
+        .header .icon { font-size: 3em; margin-bottom: 8px; display: block; }
+
+        .header h1 {
+            font-size: 2.8em;
+            font-weight: 900;
+            background: linear-gradient(135deg, #4c8bf5, #a855f7, #06d6d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .header p { color: var(--muted); margin-top: 8px; font-size: 1em; }
+
+        .header .badge {
+            display: inline-block;
+            background: rgba(76, 139, 245, 0.12);
+            color: var(--blue);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.78em;
+            font-weight: 700;
+            margin-top: 10px;
+            border: 1px solid rgba(76, 139, 245, 0.2);
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 22px 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 26px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--muted);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.93em;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 25px rgba(76, 139, 245, 0.35);
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        .section { display: none; animation: fadeUp 0.35s ease; }
+        .section.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+
+        .card:hover { border-color: rgba(76, 139, 245, 0.2); }
+
+        .card h2 {
+            font-size: 1.3em;
+            font-weight: 800;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card .sub {
+            color: var(--muted);
+            font-size: 0.86em;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        /* ===== FORM ELEMENTS ===== */
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.85em;
+            color: var(--muted);
+            margin-bottom: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea, input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--input);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.92em;
+            margin-bottom: 18px;
+            transition: all 0.3s;
+        }
+
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235e7191' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 6h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 13px 28px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(76, 139, 245, 0.3);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--green), #059669);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);
+        }
+
+        .btn-ghost {
+            background: var(--card2);
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+
+        /* ===== ALGO CHIPS ===== */
+        .algo-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+        .chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 16px;
+            background: var(--input);
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 0.84em;
+            font-weight: 700;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .chip:hover { border-color: var(--blue); }
+        .chip input { accent-color: var(--blue); cursor: pointer; width: 15px; height: 15px; }
+
+        .chip.on {
+            border-color: var(--blue);
+            background: rgba(76, 139, 245, 0.08);
+            color: var(--blue);
+        }
+
+        /* ===== HASH OUTPUT TABLE ===== */
+        .hash-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+            margin-top: 20px;
+        }
+
+        .hash-table tr { transition: transform 0.15s; }
+        .hash-table tr:hover { transform: scale(1.005); }
+
+        .hash-table td {
+            padding: 14px 18px;
+            background: var(--input);
+            font-family: 'Consolas', 'Fira Code', monospace;
+            font-size: 0.82em;
+            border-top: 1px solid transparent;
+            border-bottom: 1px solid transparent;
+        }
+
+        .hash-table td:first-child {
+            border-radius: 10px 0 0 10px;
+            color: var(--cyan);
+            font-weight: 800;
+            white-space: nowrap;
+            width: 120px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.76em;
+            border-left: 3px solid var(--cyan);
+        }
+
+        .hash-table td:nth-child(2) {
+            color: var(--green);
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        .hash-table td:last-child {
+            border-radius: 0 10px 10px 0;
+            width: 60px;
+            text-align: center;
+        }
+
+        .hash-table td:last-child button {
+            background: rgba(76, 139, 245, 0.12);
+            border: none;
+            color: var(--blue);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+
+        .hash-table td:last-child button:hover { background: rgba(76, 139, 245, 0.3); }
+
+        /* ===== FILE DROPZONE ===== */
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 44px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .dropzone:hover {
+            border-color: var(--blue);
+            background: rgba(76, 139, 245, 0.02);
+        }
+
+        .dropzone.over {
+            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.03);
+            transform: scale(1.01);
+        }
+
+        .dropzone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .dropzone .dz-icon { font-size: 2.8em; margin-bottom: 10px; }
+        .dropzone .dz-text { color: var(--muted); font-weight: 600; }
+        .dropzone .dz-hint { color: var(--dim); font-size: 0.78em; margin-top: 6px; }
+
+        /* ===== RESULT BOX ===== */
+        .result-box {
+            background: var(--input);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 18px;
+            position: relative;
+        }
+
+        .result-box .rlabel {
+            position: absolute;
+            top: -11px;
+            left: 16px;
+            background: var(--card);
+            padding: 2px 10px;
+            font-size: 0.72em;
+            color: var(--blue);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-radius: 4px;
+        }
+
+        .result-box .rvalue {
+            font-family: 'Consolas', monospace;
+            word-break: break-all;
+            color: var(--green);
+            font-size: 0.92em;
+            line-height: 1.7;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(76, 139, 245, 0.12);
+            border: none;
+            color: var(--blue);
+            padding: 7px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 0.78em;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover { background: rgba(76, 139, 245, 0.3); }
+
+        /* ===== IMAGE ===== */
+        .img-preview {
+            max-width: 100%;
+            max-height: 280px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: none;
+            margin: 16px auto;
+        }
+
+        .img-wrap { text-align: center; margin: 16px 0; }
+
+        /* ===== CAPACITY METER ===== */
+        .capacity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0 18px;
+            font-size: 0.84em;
+            color: var(--muted);
+        }
+
+        .cap-track { flex: 1; height: 8px; background: var(--input); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+        .cap-fill { height: 100%; border-radius: 4px; transition: all 0.3s; }
+
+        /* ===== INFO BOX ===== */
+        .info {
+            background: rgba(76, 139, 245, 0.06);
+            border-left: 4px solid var(--blue);
+            padding: 16px 20px;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 20px;
+            font-size: 0.86em;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .info strong { color: var(--cyan); }
+        .info code {
+            background: rgba(6, 214, 208, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--cyan);
+        }
+
+        /* ===== DOWNLOAD ===== */
+        .dl-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 700;
+            padding: 12px 24px;
+            border: 1.5px solid var(--blue);
+            border-radius: 10px;
+            transition: all 0.2s;
+            margin-top: 14px;
+        }
+
+        .dl-link:hover { background: rgba(76, 139, 245, 0.1); transform: translateY(-1px); }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 14px 26px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.88em;
+            z-index: 999;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .toast.show { transform: translateX(0); opacity: 1; }
+
+        .toast-ok { background: var(--card); border: 1.5px solid var(--green); color: var(--green); }
+        .toast-err { background: var(--card); border: 1.5px solid var(--red); color: var(--red); }
+        .toast-info { background: var(--card); border: 1.5px solid var(--blue); color: var(--blue); }
+
+        /* ===== CHAR COUNT ===== */
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: -12px;
+            margin-bottom: 14px;
+            font-size: 0.78em;
+            color: var(--dim);
+        }
+
+        /* ===== HMAC SECTION ===== */
+        .hmac-key-row {
+            display: none;
+            margin-bottom: 16px;
+        }
+
+        .hmac-key-row.show { display: block; }
+
+        /* ===== ALL HASHES COPY BOX ===== */
+        .all-hashes-box {
+            background: var(--input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .all-hashes-box pre {
+            color: var(--green);
+            font-family: 'Consolas', monospace;
+            font-size: 0.82em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.8;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) {
+            .header h1 { font-size: 2em; }
+            .card { padding: 22px 18px; }
+            .tabs { gap: 6px; padding: 14px 10px; }
+            .tab { padding: 10px 16px; font-size: 0.84em; }
+            .container { padding: 0 12px 40px; }
+            .hash-table td:first-child { width: 80px; font-size: 0.7em; padding: 10px 12px; }
+            .hash-table td:nth-child(2) { font-size: 0.72em; padding: 10px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <span class="icon">🔐</span>
+    <h1>HashVault</h1>
+    <p>Multi-algorithm hash generator & image steganography tool</p>
+    <span class="badge">⚡ Powered by CryptoJS 4.2.0</span>
+</header>
+
+<!-- ===== TABS ===== -->
+<nav class="tabs">
+    <button class="tab active" onclick="switchTab('hash',this)">
+        <span>🔑</span> Hash Generator
+    </button>
+    <button class="tab" onclick="switchTab('file',this)">
+        <span>📁</span> File Hash
+    </button>
+    <button class="tab" onclick="switchTab('hmac',this)">
+        <span>🛡️</span> HMAC
+    </button>
+    <button class="tab" onclick="switchTab('stego',this)">
+        <span>🖼️</span> Steganography
+    </button>
+</nav>
+
+<div class="container">
+
+    <!-- =============================== -->
+    <!--  SECTION 1: HASH GENERATOR      -->
+    <!-- =============================== -->
+    <div class="section active" id="sec-hash">
+        <div class="card">
+            <h2>🔑 Multi-Algorithm Hash Generator</h2>
+            <p class="sub">
+                Enter any text to generate one-way cryptographic hash digests.
+                Uses <strong>CryptoJS</strong> library for MD5, SHA family, RIPEMD-160, and more.
+            </p>
+
+            <label for="hashInput">Enter Message</label>
+            <textarea id="hashInput" placeholder="Type or paste your message here..."></textarea>
+            <div class="meta-row">
+                <span id="charCount">0 characters</span>
+                <span id="byteCount">0 bytes</span>
+            </div>
+
+            <label>Select Algorithms</label>
+            <div class="algo-grid" id="algoGrid">
+                <label class="chip on"><input type="checkbox" checked value="MD5"> MD5</label>
+                <label class="chip on"><input type="checkbox" checked value="SHA1"> SHA-1</label>
+                <label class="chip on"><input type="checkbox" checked value="SHA256"> SHA-256</label>
+                <label class="chip on"><input type="checkbox" checked value="SHA384"> SHA-384</label>
+                <label class="chip on"><input type="checkbox" checked value="SHA512"> SHA-512</label>
+                <label class="chip on"><input type="checkbox" checked value="SHA3-256"> SHA3-256</label>
+                <label class="chip"><input type="checkbox" value="SHA3-512"> SHA3-512</label>
+                <label class="chip on"><input type="checkbox" checked value="RIPEMD160"> RIPEMD-160</label>
+                <label class="chip"><input type="checkbox" value="SHA224"> SHA-224</label>
+                <label class="chip"><input type="checkbox" value="SHA3-224"> SHA3-224</label>
+                <label class="chip"><input type="checkbox" value="SHA3-384"> SHA3-384</label>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateHashes()">⚡ Generate Hashes</button>
+                <button class="btn btn-ghost" onclick="copyAllHashes()">📋 Copy All</button>
+                <button class="btn btn-ghost" onclick="clearAll()">🗑️ Clear</button>
+            </div>
+
+            <div id="hashOutput"></div>
+        </div>
+    </div>
+
+    <!-- =============================== -->
+    <!--  SECTION 2: FILE HASH           -->
+    <!-- =============================== -->
+    <div class="section" id="sec-file">
+        <div class="card">
+            <h2>📁 File Hash Calculator</h2>
+            <p class="sub">Upload any file to compute cryptographic checksums for integrity verification</p>
+
+            <div class="dropzone" id="dz1">
+                <div class="dz-icon">📂</div>
+                <div class="dz-text">Drag &amp; drop a file or click to browse</div>
+                <div class="dz-hint">Any file type &bull; Processed locally in your browser</div>
+                <input type="file" id="fileInput" onchange="hashFile(this)">
+            </div>
+
+            <div id="fileInfo" style="color:var(--muted);font-size:0.88em;margin-bottom:12px;"></div>
+            <div id="fileOutput"></div>
+        </div>
+    </div>
+
+    <!-- =============================== -->
+    <!--  SECTION 3: HMAC                -->
+    <!-- =============================== -->
+    <div class="section" id="sec-hmac">
+        <div class="card">
+            <h2>🛡️ HMAC Generator</h2>
+            <p class="sub">
+                Generate Hash-based Message Authentication Codes (HMAC) using a secret key.
+                HMAC provides both data integrity and authentication.
+            </p>
+
+            <div class="info">
+                <strong>HMAC</strong> combines a cryptographic hash function with a secret key.
+                It's used for verifying message integrity and authenticity.
+                Formula: <code>HMAC(K, m) = H((K' ⊕ opad) || H((K' ⊕ ipad) || m))</code>
+            </div>
+
+            <label for="hmacInput">Message</label>
+            <textarea id="hmacInput" placeholder="Enter message to authenticate..."></textarea>
+
+            <label for="hmacKey">Secret Key</label>
+            <input type="text" id="hmacKey" placeholder="Enter your secret key..." style="font-family:inherit;">
+
+            <label for="hmacAlgo">Algorithm</label>
+            <select id="hmacAlgo">
+                <option value="MD5">HMAC-MD5</option>
+                <option value="SHA1">HMAC-SHA1</option>
+                <option value="SHA256" selected>HMAC-SHA256</option>
+                <option value="SHA384">HMAC-SHA384</option>
+                <option value="SHA512">HMAC-SHA512</option>
+            </select>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateHMAC()">🛡️ Generate HMAC</button>
+            </div>
+
+            <div class="result-box" id="hmacResult" style="display:none;margin-top:20px;">
+                <span class="rlabel">HMAC Output</span>
+                <button class="copy-btn" onclick="copyText(gid('hmacValue').textContent)">📋 Copy</button>
+                <div class="rvalue" id="hmacValue"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================== -->
+    <!--  SECTION 4: STEGANOGRAPHY       -->
+    <!-- =============================== -->
+    <div class="section" id="sec-stego">
+
+        <!-- ENCODE -->
+        <div class="card">
+            <h2>🖼️ Steganography — Hide Message in Image</h2>
+            <p class="sub">Embed a secret message into image pixels using LSB (Least Significant Bit) encoding</p>
+
+            <div class="info">
+                <strong>How it works:</strong> Your message is converted to binary bits and hidden inside
+                the least significant bits of image pixel data (RGB channels). The visual change is
+                <strong>invisible</strong> to the human eye. Output is a PNG image carrying your hidden data.
+            </div>
+
+            <label>Step 1 — Upload Cover Image</label>
+            <div class="dropzone" id="dz2">
+                <div class="dz-icon">🖼️</div>
+                <div class="dz-text">Drop an image or click to select</div>
+                <div class="dz-hint">PNG recommended &bull; JPG, BMP also supported</div>
+                <input type="file" accept="image/*" id="stegoImgIn" onchange="loadCoverImage(this)">
+            </div>
+
+            <div class="img-wrap"><img id="coverPreview" class="img-preview" alt="Cover preview"></div>
+
+            <div class="capacity" id="capRow" style="display:none;">
+                <span>💾 Capacity:</span>
+                <div class="cap-track"><div class="cap-fill" id="capFill" style="width:0%;background:var(--green);"></div></div>
+                <span id="capText" style="min-width:100px;text-align:right;">0 / 0 chars</span>
+            </div>
+
+            <label for="stegoMsg">Step 2 — Enter Secret Message</label>
+            <textarea id="stegoMsg" placeholder="Type your secret message here..." oninput="updateCapacity()"></textarea>
+
+            <label for="stegoKey">Step 3 — Encryption Password (optional)</label>
+            <input type="password" id="stegoKey" placeholder="Add a password for AES encryption..." style="font-family:inherit;">
+
+            <div class="info" style="margin-top:0;">
+                <strong>🔒 Password Protection:</strong> If you provide a password, your message will be
+                <strong>AES-256 encrypted</strong> using CryptoJS before being embedded. The recipient
+                must know the password to extract the message.
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="stegoEncode()">🔒 Hide Message in Image</button>
+            </div>
+
+            <div id="encodeResult" style="display:none;">
+                <p style="color:var(--green);font-weight:800;margin:20px 0 12px;font-size:1.05em;">✅ Message hidden successfully!</p>
+                <canvas id="stegoCanvas" style="display:none;"></canvas>
+                <div class="img-wrap"><img id="stegoOutImg" class="img-preview" style="display:block;" alt="Stego output"></div>
+                <div style="text-align:center;">
+                    <a id="dlLink" class="dl-link" download="stego_image.png">📥 Download Stego Image</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXTRACT -->
+        <div class="card">
+            <h2>🔍 Extract Hidden Message from Image</h2>
+            <p class="sub">Upload a steganographic image to reveal the hidden message</p>
+
+            <label>Upload Stego Image</label>
+            <div class="dropzone" id="dz3">
+                <div class="dz-icon">🔍</div>
+                <div class="dz-text">Drop stego image or click to select</div>
+                <div class="dz-hint">Must be encoded with this tool</div>
+                <input type="file" accept="image/*" id="stegoDecIn" onchange="loadStegoImage(this)">
+            </div>
+
+            <div class="img-wrap"><img id="stegoDecPreview" class="img-preview" alt="Stego preview"></div>
+
+            <label for="decKey">Decryption Password (if used during encoding)</label>
+            <input type="password" id="decKey" placeholder="Enter password..." style="font-family:inherit;">
+
+            <div class="btn-group">
+                <button class="btn btn-green" onclick="stegoExtract()">🔍 Extract Message</button>
+            </div>
+
+            <div class="result-box" id="extractResult" style="display:none;margin-top:20px;">
+                <span class="rlabel">Hidden Message</span>
+                <button class="copy-btn" onclick="copyText(gid('extractValue').textContent)">📋 Copy</button>
+                <div class="rvalue" id="extractValue"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ============================================
+//  HELPERS
+// ============================================
+const gid = id => document.getElementById(id);
+
+function toast(msg, type='ok') {
+    const t = gid('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + type + ' show';
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function copyText(txt) {
+    navigator.clipboard.writeText(txt).then(() => toast('📋 Copied to clipboard!'));
+}
+
+function switchTab(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    gid('sec-' + id).classList.add('active');
+    btn.classList.add('active');
+}
+
+// Chip toggle
+document.querySelectorAll('.chip input').forEach(cb => {
+    cb.addEventListener('change', function() {
+        this.parentElement.classList.toggle('on', this.checked);
+    });
+});
+
+// Drag-drop
+document.querySelectorAll('.dropzone').forEach(z => {
+    z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('over'); });
+    z.addEventListener('dragleave', () => z.classList.remove('over'));
+    z.addEventListener('drop', e => {
+        e.preventDefault(); z.classList.remove('over');
+        const inp = z.querySelector('input[type="file"]');
+        if (e.dataTransfer.files.length) { inp.files = e.dataTransfer.files; inp.dispatchEvent(new Event('change')); }
+    });
+});
+
+// Character & byte counter
+gid('hashInput').addEventListener('input', () => {
+    const v = gid('hashInput').value;
+    gid('charCount').textContent = v.length + ' characters';
+    gid('byteCount').textContent = new TextEncoder().encode(v).length + ' bytes';
+});
+
+// ============================================
+//  CRYPTOJS HASH COMPUTATION
+// ============================================
+function computeHash(algo, message) {
+    switch(algo) {
+        case 'MD5':      return CryptoJS.MD5(message).toString();
+        case 'SHA1':     return CryptoJS.SHA1(message).toString();
+        case 'SHA224':   return CryptoJS.SHA224(message).toString();
+        case 'SHA256':   return CryptoJS.SHA256(message).toString();
+        case 'SHA384':   return CryptoJS.SHA384(message).toString();
+        case 'SHA512':   return CryptoJS.SHA512(message).toString();
+        case 'SHA3-224': return CryptoJS.SHA3(message, {outputLength: 224}).toString();
+        case 'SHA3-256': return CryptoJS.SHA3(message, {outputLength: 256}).toString();
+        case 'SHA3-384': return CryptoJS.SHA3(message, {outputLength: 384}).toString();
+        case 'SHA3-512': return CryptoJS.SHA3(message, {outputLength: 512}).toString();
+        case 'RIPEMD160':return CryptoJS.RIPEMD160(message).toString();
+        default: return '';
+    }
+}
+
+// Pretty algo name
+function algoLabel(a) {
+    const map = {
+        'MD5':'MD5','SHA1':'SHA-1','SHA224':'SHA-224','SHA256':'SHA-256',
+        'SHA384':'SHA-384','SHA512':'SHA-512','SHA3-224':'SHA3-224',
+        'SHA3-256':'SHA3-256','SHA3-384':'SHA3-384','SHA3-512':'SHA3-512',
+        'RIPEMD160':'RIPEMD-160'
+    };
+    return map[a] || a;
+}
+
+// Bit size
+function algoBits(a) {
+    const map = {
+        'MD5':128,'SHA1':160,'SHA224':224,'SHA256':256,
+        'SHA384':384,'SHA512':512,'SHA3-224':224,
+        'SHA3-256':256,'SHA3-384':384,'SHA3-512':512,
+        'RIPEMD160':160
+    };
+    return map[a] || '?';
+}
+
+// Store last hashes for copy-all
+let lastHashes = [];
+
+// ============================================
+//  GENERATE HASHES
+// ============================================
+function generateHashes() {
+    const text = gid('hashInput').value;
+    if (!text) { toast('⚠️ Enter text first!', 'err'); return; }
+
+    const selected = [];
+    document.querySelectorAll('#algoGrid input:checked').forEach(cb => selected.push(cb.value));
+    if (!selected.length) { toast('⚠️ Select at least one algorithm!', 'err'); return; }
+
+    lastHashes = [];
+    let html = '<table class="hash-table">';
+
+    for (const algo of selected) {
+        const hash = computeHash(algo, text);
+        const bits = algoBits(algo);
+        const label = algoLabel(algo);
+        lastHashes.push({ algo: label, hash, bits });
+
+        html += `<tr>
+            <td>${label}<br><span style="color:var(--dim);font-size:0.85em;">${bits}-bit</span></td>
+            <td>${hash}</td>
+            <td><button onclick="copyText('${hash}')">Copy</button></td>
+        </tr>`;
+    }
+
+    html += '</table>';
+    gid('hashOutput').innerHTML = html;
+    toast('✅ ' + selected.length + ' hashes generated!');
+}
+
+function copyAllHashes() {
+    if (!lastHashes.length) { toast('⚠️ Generate hashes first!', 'err'); return; }
+    const text = lastHashes.map(h => h.algo + ' (' + h.bits + '-bit): ' + h.hash).join('\n');
+    copyText(text);
+}
+
+function clearAll() {
+    gid('hashInput').value = '';
+    gid('hashOutput').innerHTML = '';
+    gid('charCount').textContent = '0 characters';
+    gid('byteCount').textContent = '0 bytes';
+    lastHashes = [];
+}
+
+// ============================================
+//  FILE HASHING
+// ============================================
+function hashFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const wordArray = CryptoJS.lib.WordArray.create(e.target.result);
+
+        // File info
+        const size = file.size < 1024 ? file.size + ' B' :
+                     file.size < 1048576 ? (file.size / 1024).toFixed(1) + ' KB' :
+                     (file.size / 1048576).toFixed(2) + ' MB';
+        gid('fileInfo').innerHTML = '📁 <strong>' + file.name + '</strong> &bull; ' + size + ' &bull; ' + file.type;
+
+        const algos = ['MD5','SHA1','SHA256','SHA384','SHA512','SHA3-256','RIPEMD160'];
+        let html = '<table class="hash-table">';
+
+        for (const algo of algos) {
+            let hash;
+            switch(algo) {
+                case 'MD5':      hash = CryptoJS.MD5(wordArray).toString(); break;
+                case 'SHA1':     hash = CryptoJS.SHA1(wordArray).toString(); break;
+                case 'SHA256':   hash = CryptoJS.SHA256(wordArray).toString(); break;
+                case 'SHA384':   hash = CryptoJS.SHA384(wordArray).toString(); break;
+                case 'SHA512':   hash = CryptoJS.SHA512(wordArray).toString(); break;
+                case 'SHA3-256': hash = CryptoJS.SHA3(wordArray, {outputLength:256}).toString(); break;
+                case 'RIPEMD160':hash = CryptoJS.RIPEMD160(wordArray).toString(); break;
+            }
+
+            html += `<tr>
+                <td>${algoLabel(algo)}<br><span style="color:var(--dim);font-size:0.85em;">${algoBits(algo)}-bit</span></td>
+                <td>${hash}</td>
+                <td><button onclick="copyText('${hash}')">Copy</button></td>
+            </tr>`;
+        }
+
+        html += '</table>';
+        gid('fileOutput').innerHTML = html;
+        toast('✅ File hashes computed!');
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// ============================================
+//  HMAC GENERATION
+// ============================================
+function generateHMAC() {
+    const msg = gid('hmacInput').value;
+    const key = gid('hmacKey').value;
+    const algo = gid('hmacAlgo').value;
+
+    if (!msg) { toast('⚠️ Enter a message!', 'err'); return; }
+    if (!key) { toast('⚠️ Enter a secret key!', 'err'); return; }
+
+    let hmac;
+    switch(algo) {
+        case 'MD5':    hmac = CryptoJS.HmacMD5(msg, key).toString(); break;
+        case 'SHA1':   hmac = CryptoJS.HmacSHA1(msg, key).toString(); break;
+        case 'SHA256': hmac = CryptoJS.HmacSHA256(msg, key).toString(); break;
+        case 'SHA384': hmac = CryptoJS.HmacSHA384(msg, key).toString(); break;
+        case 'SHA512': hmac = CryptoJS.HmacSHA512(msg, key).toString(); break;
+    }
+
+    gid('hmacResult').style.display = 'block';
+    gid('hmacValue').textContent = hmac;
+    toast('🛡️ HMAC generated!');
+}
+
+// ============================================
+//  STEGANOGRAPHY
+// ============================================
+let coverData = null;
+let stegoDecData = null;
+let maxChars = 0;
+
+const DELIMITER = '\x00\x00\x01END\x01\x00\x00';
+
+function loadCoverImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            gid('coverPreview').src = e.target.result;
+            gid('coverPreview').style.display = 'block';
+
+            const cv = document.createElement('canvas');
+            cv.width = img.width; cv.height = img.height;
+            const ctx = cv.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            coverData = { img, ctx, pixels: ctx.getImageData(0, 0, img.width, img.height) };
+
+            maxChars = Math.floor((img.width * img.height * 3) / 8) - DELIMITER.length - 50;
+            gid('capRow').style.display = 'flex';
+            updateCapacity();
+            toast('📷 Cover image loaded! (' + img.width + '×' + img.height + ')', 'info');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function loadStegoImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            gid('stegoDecPreview').src = e.target.result;
+            gid('stegoDecPreview').style.display = 'block';
+
+            const cv = document.createElement('canvas');
+            cv.width = img.width; cv.height = img.height;
+            const ctx = cv.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            stegoDecData = ctx.getImageData(0, 0, img.width, img.height);
+            toast('📷 Stego image loaded!', 'info');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateCapacity() {
+    const len = gid('stegoMsg').value.length;
+    const pct = maxChars > 0 ? Math.min((len / maxChars) * 100, 100) : 0;
+    const fill = gid('capFill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct > 90 ? 'var(--red)' : pct > 65 ? 'var(--orange)' : 'var(--green)';
+    gid('capText').textContent = len.toLocaleString() + ' / ' + maxChars.toLocaleString() + ' chars';
+}
+
+function textToBits(text) {
+    let bits = '';
+    for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        // Use 16-bit to support unicode
+        bits += code.toString(2).padStart(16, '0');
+    }
+    return bits;
+}
+
+function bitsToText(bits) {
+    let text = '';
+    for (let i = 0; i + 16 <= bits.length; i += 16) {
+        const code = parseInt(bits.substr(i, 16), 2);
+        if (code === 0) break;
+        text += String.fromCharCode(code);
+    }
+    return text;
+}
+
+function stegoEncode() {
+    if (!coverData) { toast('⚠️ Upload a cover image first!', 'err'); return; }
+
+    let message = gid('stegoMsg').value;
+    if (!message) { toast('⚠️ Enter a secret message!', 'err'); return; }
+
+    const password = gid('stegoKey').value;
+
+    // If password provided, AES encrypt using CryptoJS
+    if (password) {
+        const encrypted = CryptoJS.AES.encrypt(message, password).toString();
+        message = '🔐' + encrypted; // Prefix to indicate encryption
+    }
+
+    message += DELIMITER;
+
+    if (message.length > maxChars + DELIMITER.length) {
+        toast('⚠️ Message too long for this image!', 'err');
+        return;
+    }
+
+    const bits = textToBits(message);
+    const pixels = new Uint8ClampedArray(coverData.pixels.data);
+
+    let bi = 0;
+    for (let i = 0; i < pixels.length && bi < bits.length; i++) {
+        if (i % 4 === 3) continue; // Skip alpha
+        pixels[i] = (pixels[i] & 0xFE) | parseInt(bits[bi]);
+        bi++;
+    }
+
+    const cv = gid('stegoCanvas');
+    cv.width = coverData.img.width;
+    cv.height = coverData.img.height;
+    const ctx = cv.getContext('2d');
+    ctx.putImageData(new ImageData(pixels, cv.width, cv.height), 0, 0);
+
+    const url = cv.toDataURL('image/png');
+    gid('stegoOutImg').src = url;
+    gid('stegoOutImg').style.display = 'block';
+    gid('dlLink').href = url;
+    gid('encodeResult').style.display = 'block';
+
+    // Also hash the message for verification
+    const msgHash = CryptoJS.SHA256(gid('stegoMsg').value).toString().substring(0, 16);
+    toast('🔒 Message hidden! Verification: ' + msgHash + '...');
+}
+
+function stegoExtract() {
+    if (!stegoDecData) { toast('⚠️ Upload a stego image!', 'err'); return; }
+
+    const d = stegoDecData.data;
+    const password = gid('decKey').value;
+
+    let bits = '';
+    for (let i = 0; i < d.length; i++) {
+        if (i % 4 === 3) continue;
+        bits += (d[i] & 1).toString();
+    }
+
+    let message = bitsToText(bits);
+
+    // Find delimiter
+    const idx = message.indexOf(DELIMITER);
+    const resultBox = gid('extractResult');
+    const resultVal = gid('extractValue');
+    resultBox.style.display = 'block';
+
+    if (idx === -1) {
+        resultVal.textContent = '⚠️ No hidden message found! Make sure the image was encoded with this tool.';
+        resultVal.style.color = 'var(--red)';
+        toast('⚠️ No message detected!', 'err');
+        return;
+    }
+
+    message = message.substring(0, idx);
+
+    // Check if AES encrypted (has prefix)
+    if (message.startsWith('🔐')) {
+        const ciphertext = message.substring(2);
+        if (!password) {
+            resultVal.textContent = '🔒 This message is password-protected. Please enter the decryption password.';
+            resultVal.style.color = 'var(--orange)';
+            toast('🔒 Password required!', 'info');
+            return;
+        }
+        try {
+            const decrypted = CryptoJS.AES.decrypt(ciphertext, password);
+            message = decrypted.toString(CryptoJS.enc.Utf8);
+            if (!message) throw new Error('Empty');
+        } catch(e) {
+            resultVal.textContent = '❌ Decryption failed! Wrong password or corrupted data.';
+            resultVal.style.color = 'var(--red)';
+            toast('❌ Wrong password!', 'err');
+            return;
+        }
+    }
+
+    resultVal.textContent = message;
+    resultVal.style.color = 'var(--green)';
+    toast('🔍 Hidden message extracted!');
+}
+
+</script>
+<p style="text-align:center;color:#ffffff;font-size:0.73em;">
+    All the features like hash genrator , file hash , HMAC, and Steganography is embedded.
+    UI and code prepared by Ved Patil.
+</body>
+</html>
+
+
